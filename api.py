@@ -25,13 +25,14 @@ class BotHandler(http.Request, object):
 
     def process(self):
         path = [x for x in self.path.split("/") if x]
-        from undergroundmap import Led
+        from led_controller import Led
         try:
             if self.method == 'POST':
                 for led_index, color_string in self.args.items():
                     color_string = color_string[0]
                     self.api.led_controller.leds[int(led_index)] = Led(int(led_index), *color_string.split(","))
                 self.api.trigger("update")
+                print "update"
                 return self.simple_render("Done.")
             else:
                 f = open("main.html")
