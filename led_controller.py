@@ -15,6 +15,15 @@ class Led(object):
     def __repr__(self):
         return "c%s %s %s %s" % (self.index, self.red, self.green, self.blue)
 
+    def escape(self, color):
+        """ 1 and 2 are special values, any color value that uses them is instead changed to 0 """
+        if color in [1,2]:
+            return 0
+        return color
+
+    def to_list(self):
+        return [self.escape(self.red), self.escape(self.green), self.escape(self.blue)]
+
 
 class LedController(object):
     def __init__(self, dev, num_leds):
@@ -24,21 +33,18 @@ class LedController(object):
         self.leds = [Led(x, 0, 0, 0) for x in range(num_leds)]
 
     def loop(self):
-        self.api.demonize(port=8082)
-        while True:
-            for event, kwargs in self.api.events:
-                if event == "update":
-                    self.send_message(self.make_message(self.leds), wait_for_reply=False)
-                    self.send_message('s')
+        self.api.run(port=8082)
+
+    def update(self):
+        self.send_message(self.make_message(self.leds))
 
     def send_message(self, message, wait_for_reply=True, wait_for_empty_buffer=False):
         """ Send serial message to arduino  
             Set wait_for_reply to wait and return reply 
             wait_for_empty_buffer to continue reading until the buffer is empty
         """
-        print message
         retval = []
-        self.ser.write(message+"\n")
+        self.ser.write(message)
         if wait_for_reply:
             retval.append(self.ser.readline().strip())
 
@@ -48,8 +54,13 @@ class LedController(object):
 
         return retval
 
-    def make_message(self, commands):
-        return "".join([str(c) for c in commands])
+    def make_message(self, leds):
+        message = []
+        for led in leds:
+            message += led.to_list()
+
+        message = [1] + message + [2]
+        return bytearray(message)
 
 
 if __name__ == "__main__":

@@ -30,9 +30,8 @@ class BotHandler(http.Request, object):
             if self.method == 'POST':
                 for led_index, color_string in self.args.items():
                     color_string = color_string[0]
-                    self.api.led_controller.leds[int(led_index)] = Led(int(led_index), *color_string.split(","))
-                self.api.trigger("update")
-                print "update"
+                    self.api.led_controller.leds[int(led_index)] = Led(int(led_index), *[int(x) for x in color_string.split(",")])
+                self.api.led_controller.update()
                 return self.simple_render("Done.")
             else:
                 f = open("main.html")
